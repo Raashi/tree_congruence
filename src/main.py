@@ -1,46 +1,55 @@
 #!/usr/bin/env/ python
 import networkx as nx
 import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
 
-from tree_draw import tree_pos
+from sys import argv, stdin
+
+import lattice
+
+
+def draw_graph_circular(g: nx.Graph):
+    nx.draw_circular(g)
+    plt.show()
+
+
+def init_graph(io_obj):
+    edges_count = int(io_obj.readline())
+    edges = [tuple(io_obj.readline().strip().split(" "))
+             for _ in range(edges_count)]
+    g = nx.Graph()
+    for edge in edges:
+        for vertex in edge:
+            if vertex not in g:
+                g.add_node(vertex)
+    g.add_edges_from(edges)
+    return g
+
+
+def get_lattice_main_elements():
+    source_possible = ["-c", "-f"]
+    source = argv[1]
+    if source not in source_possible:
+        raise RuntimeError("Введи коррекный источник ввода графа: -c или -f")
+
+    g = None
+    if source == "-c":
+        g = init_graph(stdin)
+    elif source == "-f":
+        with open(argv[2]) as src_file:
+            g = init_graph(src_file)
+    # draw_graph_circular(g)
+
+    factors = lattice.get_main_elements_common(lattice.FactorGraph.get_default(g))
+    fac = next(factors.__iter__())
+    factors_cool = lattice.get_main_elements_common(fac)
+    print(getattr(fac, "cong"))
+    print("-" * 20)
+    for factor in factors_cool:
+        print(getattr(factor, "cong"))
 
 
 def main():
-    G = nx.Graph()
-
-    G.add_node(1, image=mpimg.imread('icon1.png'))
-    G.add_node(2, image=mpimg.imread('icon2.png'))
-    G.add_node(3, image=mpimg.imread('icon2.png'))
-    G.add_node(4, image=mpimg.imread('icon1.png'))
-    G.add_edge(1, 2)
-    G.add_edge(2, 3)
-    G.add_edge(1, 4)
-
-    # G.add_edges_from([(1, 2), (1, 3), (1, 4), (2, 5), (2, 6), (2, 7), (3, 8), (3, 9), (4, 10),
-    #                   (5, 11), (5, 12), (6, 13)])
-    pos = tree_pos(G, 1)
-    # nx.draw(G, pos=pos, with_labels=True)
-    fig = plt.figure(figsize=(5, 5))
-    ax = plt.subplot(111)
-    ax.set_aspect('equal')
-    nx.draw_networkx(G, pos=pos)
-
-    trans = ax.transData.transform
-    trans2 = fig.transFigure.inverted().transform
-
-    piesize = 0.2  # this is the image size
-    p2 = piesize / 2.0
-    for n in G:
-        xx, yy = trans(pos[n])  # figure coordinates
-        xa, ya = trans2((xx, yy))  # axes coordinates
-        a = plt.axes([xa - p2, ya - p2, piesize, piesize])
-        a.set_aspect('equal')
-        a.imshow(G.node[n]['image'])
-        a.axis('off')
-    ax.axis('off')
-
-    plt.savefig('tree.png')
+    get_lattice_main_elements()
 
 
 if __name__ == '__main__':
