@@ -39,13 +39,14 @@ def get_lattice_main_elements():
             g = init_graph(src_file)
     # draw_graph_circular(g)
 
-    factors = lattice.get_main_elements_common(lattice.FactorGraph.get_default(g))
+    factor_default = lattice.FactorGraph.get_default(g)
+    factors = factor_default.get_mains()
     fac = next(factors.__iter__())
-    factors_cool = lattice.get_main_elements_common(fac)
-    print(getattr(fac, "cong"))
+    factors_cool = fac.get_mains()
+    print(fac.cong)
     print("-" * 20)
     for factor in factors_cool:
-        print(getattr(factor, "cong"))
+        print(factor.cong)
 
 
 def main():
