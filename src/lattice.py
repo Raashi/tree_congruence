@@ -5,11 +5,26 @@ from itertools import combinations
 import itertools
 
 
-def independent_subsets(g: nx.Graph, subset_1, subset_2):
+def independent_subsets(g: nx.Graph, subset_1, subset_2) -> bool:
     for u, v in itertools.product(subset_1, subset_2):
         if g.has_edge(u, v):
             return False
     return True
+
+
+def is_tree(g: nx.Graph) -> bool:
+    if g.number_of_nodes() - 1 != g.number_of_edges():
+        return False
+    visited = set()
+    queue = {next(g.nodes.__iter__())}
+    while len(queue):
+        current = queue.pop()
+        visited.add(current)
+        for v in g.neighbors(current):
+            if v not in visited:
+                visited.add(v)
+                queue.add(v)
+    return len(visited) == g.number_of_nodes()
 
 
 class FactorGraph(nx.Graph):
@@ -54,3 +69,6 @@ class FactorGraph(nx.Graph):
                 main_factors_congs.add(cong_tuple)
                 main_factors.add(factor)
         return main_factors
+
+    def get_mains_tree(self):
+        main_factors = self.get_mains()

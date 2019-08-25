@@ -25,18 +25,22 @@ def init_graph(io_obj):
     return g
 
 
-def get_lattice_main_elements():
+def read_graph(args) -> nx.Graph:
     source_possible = ["-c", "-f"]
-    source = argv[1]
+    source = args[0]
     if source not in source_possible:
         raise RuntimeError("Введи коррекный источник ввода графа: -c или -f")
-
     g = None
     if source == "-c":
         g = init_graph(stdin)
     elif source == "-f":
-        with open(argv[2]) as src_file:
+        with open(args[1]) as src_file:
             g = init_graph(src_file)
+    return g
+
+
+def get_lattice_main_elements():
+    g = read_graph(argv[1:3])
     # draw_graph_circular(g)
 
     factor_default = lattice.FactorGraph.get_default(g)
@@ -49,8 +53,14 @@ def get_lattice_main_elements():
         print(factor.cong)
 
 
+def test_tree():
+    g = read_graph(argv[1:3])
+    print(lattice.is_tree(g))
+
+
 def main():
-    get_lattice_main_elements()
+    # get_lattice_main_elements()
+    test_tree()
 
 
 if __name__ == '__main__':
