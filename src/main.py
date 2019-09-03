@@ -5,10 +5,18 @@ import matplotlib.pyplot as plt
 from sys import argv, stdin
 
 import lattice
+from tree_draw_alt import tree_pos
 
 
 def draw_graph_circular(g: nx.Graph):
     nx.draw_circular(g)
+    plt.show()
+
+
+def draw_tree(hl: lattice.HalfLattice):
+    pos = tree_pos(hl, hl.start.get_str_cong())
+    nx.draw_networkx(hl, pos=pos, labels=hl.get_labels())
+    # nx.draw_networkx_labels(hl, pos=pos, labels=hl.get_labels())
     plt.show()
 
 
@@ -39,13 +47,16 @@ def read_graph(args) -> nx.Graph:
     return g
 
 
-def get_lattice_main_elements():
+def test_main_factors():
     g = read_graph(argv[1:3])
     # draw_graph_circular(g)
 
     factor_default = lattice.FactorGraph.get_default(g)
-    factors = factor_default.get_mains()
-    fac = next(factors.__iter__())
+    factors = list(factor_default.get_mains())
+    if not len(factors):
+        print('Граф имеет только тождественную конгруэнцию')
+        return
+    fac = factors[0]
     factors_cool = fac.get_mains()
     print(fac.cong)
     print("-" * 20)
@@ -58,9 +69,17 @@ def test_tree():
     print(lattice.is_tree(g))
 
 
+def test_half_lattice():
+    g = read_graph(argv[1:3])
+    hl = lattice.HalfLattice(g)
+    for level, nodes_with_level in enumerate(hl.levels):
+        print(level, ':', [node for node in nodes_with_level])
+    draw_tree(hl)
+
+
 def main():
-    # get_lattice_main_elements()
-    test_tree()
+    test_half_lattice()
+    # test_tree()
 
 
 if __name__ == '__main__':

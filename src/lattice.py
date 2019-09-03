@@ -31,7 +31,7 @@ class FactorGraph(nx.Graph):
     def __init__(self, g: nx.Graph, cong: list):
         nx.Graph.__init__(self)
         self.g = g
-        self.cong = cong
+        self.cong = sorted(cong)
         self.add_nodes_from(cong)
         for cls_1, cls_2 in combinations(cong, 2):
             for u, v in itertools.product(cls_1, cls_2):
@@ -44,6 +44,12 @@ class FactorGraph(nx.Graph):
             if node in cls:
                 return cls
         raise RuntimeError("Не найден класс вершины {}".format(node))
+
+    def get_str_cong(self):
+        return str(self.cong)
+
+    def get_str_cong_beauty(self):
+        return '\n'.join(map(str, self.cong))
 
     @staticmethod
     def get_default(g: nx.Graph):
@@ -70,5 +76,65 @@ class FactorGraph(nx.Graph):
                 main_factors.add(factor)
         return main_factors
 
-    def get_mains_tree(self):
-        main_factors = self.get_mains()
+
+class HalfLattice(nx.DiGraph):
+    def __init__(self, g: nx.Graph):
+        super(HalfLattice, self).__init__()
+        self.final = []
+        self.start = FactorGraph.get_default(g)
+        self.add_node(self.start)
+        self._build()
+        self._find_finals()
+
+        self.levels = None
+        self.nodes_levels = None
+        self._set_levels()
+
+    def add_node(self, fg: FactorGraph,  **attr):
+        node = fg.get_str_cong()
+        super(HalfLattice, self).add_node(node, **attr)
+        self.nodes[node]['fg'] = fg
+
+    def _build(self):
+        queue = [self.start.get_str_cong()]
+        while len(queue):
+            current = queue.pop()
+            main_factors = self.nodes[current]['fg'].get_mains()
+            for main_factor in main_factors:
+                node = main_factor.get_str_cong()
+                if node not in self.nodes:
+                    self.add_node(main_factor)
+                self.add_edge(current, node)
+                queue.append(node)
+
+    def _find_finals(self):
+        queue = [self.start.get_str_cong()]
+        while len(queue):
+            current = queue.pop()
+            current_fg = self.nodes[current]['fg']
+            outers = list(self.successors(current))
+            if not len(outers):
+                if current_fg not in self.final:
+                    self.final.append(current_fg)
+            else:
+                for u in outers:
+                    queue.append(u)
+
+    def _set_levels(self):
+        self.levels = []
+        self.nodes_levels = {}
+        for node in self.nodes:
+            level = 0
+            current = node
+            while len(list(self.predecessors(current))):
+                current = next(self.predecessors(current))
+                level += 1
+            self.levels += [[] for _ in range(level + 1 - len(self.levels))]
+            self.levels[level].append(node)
+            self.nodes_levels[node] = level
+
+    def get_labels(self):
+        labels = {}
+        for node in self.nodes:
+            labels[node] = self.nodes[node]['fg'].get_str_cong_beauty()
+        return labels
