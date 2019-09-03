@@ -51,12 +51,23 @@ class FactorGraph(nx.Graph):
     def get_str_cong_beauty(self):
         return '\n'.join(map(str, self.cong))
 
+    def __eq__(self, other):
+        if not isinstance(other, FactorGraph):
+            return False
+        return self.get_str_cong() == other.get_str_cong()
+
+    def __hash__(self):
+        return self.get_str_cong().__hash__()
+
+    @staticmethod
+    def get_default_congruence(g: nx.Graph):
+        return [tuple([node]) for node in g]
+
     @staticmethod
     def get_default(g: nx.Graph):
         if type(g) is FactorGraph:
             raise TypeError("Взятие тожественной конгруэнции возможно только для nx.Graph")
-        cong = [tuple([node]) for node in g]
-        return FactorGraph(g, cong)
+        return FactorGraph(g, FactorGraph.get_default_congruence(g))
 
     def get_mains(self):
         main_factors = set()
@@ -77,11 +88,41 @@ class FactorGraph(nx.Graph):
         return main_factors
 
 
+class TreeFactorGraph(FactorGraph):
+    def __init__(self, g: nx.Graph, cong: list):
+        super(TreeFactorGraph, self).__init__(g, cong)
+        self.generated_by = ()
+
+    def get_mains(self):
+        queue = [self]
+        res = set()
+
+        while len(queue):
+            current = queue.pop()
+            main_factors = FactorGraph.get_mains(current)
+            for main_factor in main_factors:
+                if main_factor in res:
+                    continue
+                elif is_tree(main_factor):
+                    res.add(TreeFactorGraph(main_factor.g, main_factor.cong))
+                else:
+                    queue.append(main_factor)
+        return res
+
+    @staticmethod
+    def get_default(g: nx.Graph):
+        if not is_tree(g):
+            raise ValueError("Попытка построения тождественной древесной конгруэнции для графа, не являющимся деревом")
+        if isinstance(g, FactorGraph):
+            raise TypeError("Взятие тожественной конгруэнции возможно только для nx.Graph")
+        return TreeFactorGraph(g, FactorGraph.get_default_congruence(g))
+
+
 class HalfLattice(nx.DiGraph):
-    def __init__(self, g: nx.Graph):
+    def __init__(self, g: nx.Graph, cong_cls=FactorGraph):
         super(HalfLattice, self).__init__()
         self.final = []
-        self.start = FactorGraph.get_default(g)
+        self.start = cong_cls.get_default(g)
         self.add_node(self.start)
         self._build()
         self._find_finals()
@@ -121,14 +162,18 @@ class HalfLattice(nx.DiGraph):
                     queue.append(u)
 
     def _set_levels(self):
+        def gen_distances_to_root(source, cur, length):
+            if cur == self.start.get_str_cong():
+                yield length
+            for u in self.predecessors(cur):
+                yield from gen_distances_to_root(source, u, length + 1)
+
         self.levels = []
         self.nodes_levels = {}
         for node in self.nodes:
-            level = 0
-            current = node
-            while len(list(self.predecessors(current))):
-                current = next(self.predecessors(current))
-                level += 1
+            distances = [level for level in gen_distances_to_root(node, node, 0)]
+            level = max(distances)
+
             self.levels += [[] for _ in range(level + 1 - len(self.levels))]
             self.levels[level].append(node)
             self.nodes_levels[node] = level
@@ -138,3 +183,8 @@ class HalfLattice(nx.DiGraph):
         for node in self.nodes:
             labels[node] = self.nodes[node]['fg'].get_str_cong_beauty()
         return labels
+
+
+class Lattice(HalfLattice):
+    def __init__(self, g: nx.Graph):
+        super(Lattice, self).__init__(g, TreeFactorGraph)

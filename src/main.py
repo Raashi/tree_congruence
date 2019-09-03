@@ -4,20 +4,8 @@ import matplotlib.pyplot as plt
 
 from sys import argv, stdin
 
-import lattice
-from tree_draw_alt import tree_pos
-
-
-def draw_graph_circular(g: nx.Graph):
-    nx.draw_circular(g)
-    plt.show()
-
-
-def draw_tree(hl: lattice.HalfLattice):
-    pos = tree_pos(hl, hl.start.get_str_cong())
-    nx.draw_networkx(hl, pos=pos, labels=hl.get_labels())
-    # nx.draw_networkx_labels(hl, pos=pos, labels=hl.get_labels())
-    plt.show()
+import alg
+import draw
 
 
 def init_graph(io_obj):
@@ -51,7 +39,7 @@ def test_main_factors():
     g = read_graph(argv[1:3])
     # draw_graph_circular(g)
 
-    factor_default = lattice.FactorGraph.get_default(g)
+    factor_default = alg.FactorGraph.get_default(g)
     factors = list(factor_default.get_mains())
     if not len(factors):
         print('Граф имеет только тождественную конгруэнцию')
@@ -66,20 +54,29 @@ def test_main_factors():
 
 def test_tree():
     g = read_graph(argv[1:3])
-    print(lattice.is_tree(g))
+    print(alg.is_tree(g))
 
 
 def test_half_lattice():
     g = read_graph(argv[1:3])
-    hl = lattice.HalfLattice(g)
+    hl = alg.HalfLattice(g)
     for level, nodes_with_level in enumerate(hl.levels):
         print(level, ':', [node for node in nodes_with_level])
-    draw_tree(hl)
+    draw.draw_lattice(hl)
+
+
+def test_lattice():
+    g = read_graph(argv[1:3])
+    lattice = alg.Lattice(g)
+    for level, nodes_with_level in enumerate(lattice.levels):
+        print(level, ':', [node for node in nodes_with_level])
+    draw.draw_lattice(lattice)
 
 
 def main():
-    test_half_lattice()
+    # test_half_lattice()
     # test_tree()
+    test_lattice()
 
 
 if __name__ == '__main__':
