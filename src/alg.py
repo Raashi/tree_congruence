@@ -27,12 +27,84 @@ def is_tree(g: nx.Graph) -> bool:
     return len(visited) == g.number_of_nodes()
 
 
+def is_chain(g: nx.Graph) -> bool:
+    if not is_tree(g):
+        return False
+    # noinspection PyCallingNonCallable
+    degrees = list(map(lambda x: x[1], g.degree(list(g.nodes))))
+    return sorted(degrees) == [1, 1] + [2] * (g.number_of_nodes() - 2)
+
+
+def get_path(g: nx.Graph, u, v):
+    queue = [u]
+    p = {u: None}
+
+    while len(queue):
+        current = queue.pop()
+        for u in g.adj[current]:
+            if u not in p:
+                p[u] = current
+                queue.append(u)
+        if v in p:
+            break
+
+    res = [v]
+    current = v
+    while p[current] is not None:
+        current = p[current]
+        res.append(current)
+    res.reverse()
+    return res
+
+
+def get_cycle(g: nx.Graph, node_in_cycle):
+    def dfs(v, parent, stack):
+        for node in g.adj[v]:
+            if node == parent:
+                continue
+            if node in stack:
+                return stack
+            else:
+                cycle = dfs(node, v, stack + [node])
+                if cycle is not None:
+                    return cycle
+    return dfs(node_in_cycle, None, [node_in_cycle])
+
+    queue = [node_in_cycle]
+    p = {node_in_cycle: None}
+    while len(queue):
+        current = queue.pop()
+        for u in g.adj[current]:
+            if u not in p:
+                p[u] = current
+                queue.append(u)
+            else:
+                p[node_in_cycle] = current
+                break
+        if p[node_in_cycle] is not None:
+            break
+
+    res = [node_in_cycle]
+    current = node_in_cycle
+    while p[current] != node_in_cycle:
+        current = p[current]
+        res.append(current)
+    return res
+
+
+def all_chains(g, cycle: list):
+    if not isinstance(g, FactorGraph):
+        raise ValueError("Функция определена только для FactorGraph и его наследников")
+    pass
+
+
 class FactorGraph(nx.Graph):
-    def __init__(self, g: nx.Graph, cong: list):
+    def __init__(self, g: nx.Graph, cong: list, generators=None):
         nx.Graph.__init__(self)
         self.g = g
         self.cong = sorted(cong)
         self.add_nodes_from(cong)
+        self.generators = generators
         for cls_1, cls_2 in combinations(cong, 2):
             for u, v in itertools.product(cls_1, cls_2):
                 if g.has_edge(u, v):
@@ -44,6 +116,21 @@ class FactorGraph(nx.Graph):
             if node in cls:
                 return cls
         raise RuntimeError("Не найден класс вершины {}".format(node))
+
+    def distance(self, u, v):
+        queue = [u]
+        d = {u: 0}
+        while len(queue):
+            current = queue.pop()
+            for node in self.adj[current]:
+                if node == v:
+                    return d[current] + 1
+                elif node in d:
+                    continue
+                else:
+                    queue.append(node)
+                    d[node] = d[current] + 1
+        raise ValueError("Невозможно определить расстояние между вершинами")
 
     def get_str_cong(self):
         return str(self.cong)
@@ -69,18 +156,24 @@ class FactorGraph(nx.Graph):
             raise TypeError("Взятие тожественной конгруэнции возможно только для nx.Graph")
         return FactorGraph(g, FactorGraph.get_default_congruence(g))
 
-    def get_mains(self):
+    def get_mains(self, allowed_nodes=None):
         main_factors = set()
         main_factors_congs = set()
         for cls_1, cls_2 in itertools.combinations(self.cong, 2):
             if not independent_subsets(self.g, cls_1, cls_2):
+                continue
+            if self.distance(cls_1, cls_2) % 2 == 1:
+                continue
+            if allowed_nodes is not None and \
+                    (cls_1 not in allowed_nodes or
+                     cls_2 not in allowed_nodes):
                 continue
             cong = deepcopy(self.cong)
             cong.remove(cls_1), cong.remove(cls_2)
             cong.append(tuple(sorted(cls_1 + cls_2)))
             cong.sort()
 
-            factor = FactorGraph(self.g, cong)
+            factor = FactorGraph(self.g, cong, (cls_1, cls_2))
             cong_tuple = tuple(factor.cong)
             if cong_tuple not in main_factors_congs:
                 main_factors_congs.add(cong_tuple)
@@ -93,20 +186,24 @@ class TreeFactorGraph(FactorGraph):
         super(TreeFactorGraph, self).__init__(g, cong)
         self.generated_by = ()
 
-    def get_mains(self):
+    def get_mains(self, allowed_nodes=None):
         queue = [self]
         res = set()
 
         while len(queue):
-            current = queue.pop()
-            main_factors = FactorGraph.get_mains(current)
+            current, allowed_nodes = queue.pop(), None
+            if isinstance(current, tuple):
+                current, allowed_nodes = current
+            main_factors = FactorGraph.get_mains(current, allowed_nodes)
             for main_factor in main_factors:
                 if main_factor in res:
                     continue
                 elif is_tree(main_factor):
                     res.add(TreeFactorGraph(main_factor.g, main_factor.cong))
                 else:
-                    queue.append(main_factor)
+                    gens = main_factor.generators[0] + main_factor.generators[1]
+                    path = get_cycle(main_factor, tuple(sorted(tuple(gens))))
+                    queue.append((main_factor, path))
         return res
 
     @staticmethod
@@ -188,3 +285,9 @@ class HalfLattice(nx.DiGraph):
 class Lattice(HalfLattice):
     def __init__(self, g: nx.Graph):
         super(Lattice, self).__init__(g, TreeFactorGraph)
+
+
+if __name__ == '__main__':
+    _g = nx.path_graph(5)
+    _g.add_edge(1, 5)
+    print(get_path(_g, 2, 5))

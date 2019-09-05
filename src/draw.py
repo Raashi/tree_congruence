@@ -25,5 +25,7 @@ def lattice_pos(g: HalfLattice, root, levels, width=1., height=1.):
 
 def draw_lattice(g: HalfLattice):
     pos = lattice_pos(g, g.start.get_str_cong(), levels=g.levels)
-    nx.draw_networkx(g, pos=pos, labels=g.get_labels())
+    nx.draw_networkx(g, pos=pos, labels=g.get_labels(), node_size=3000, node_color='white')
+    # nx.draw_networkx_edges(g, pos=pos)
+    # nx.draw_networkx_labels(g, pos, g.get_labels())
     plt.show()
