@@ -68,9 +68,10 @@ def test_half_lattice():
 def test_lattice():
     g = read_graph(argv[1:3])
     lattice = alg.Lattice(g)
-    for level, nodes_with_level in enumerate(lattice.levels):
-        print(level, ':', [node for node in nodes_with_level])
-    draw.draw_lattice(lattice)
+    # for level, nodes_with_level in enumerate(lattice.levels):
+    #     print(level, ':', [node for node in nodes_with_level])
+    # draw.draw_lattice(lattice, show=False, filename='out.png')
+    draw.draw_lattice_images(lattice)
 
 
 def main():
