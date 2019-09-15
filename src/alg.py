@@ -1,8 +1,13 @@
 import networkx as nx
 
 from copy import deepcopy
+from itertools import chain
 from itertools import combinations
 import itertools
+
+
+def format_congruence(cong_str):
+    return str(cong_str).replace("'", '').replace('(', '{').replace(')', '}')
 
 
 def independent_subsets(g: nx.Graph, subset_1, subset_2) -> bool:
@@ -25,14 +30,6 @@ def is_tree(g: nx.Graph) -> bool:
                 visited.add(v)
                 queue.add(v)
     return len(visited) == g.number_of_nodes()
-
-
-def is_chain(g: nx.Graph) -> bool:
-    if not is_tree(g):
-        return False
-    # noinspection PyCallingNonCallable
-    degrees = list(map(lambda x: x[1], g.degree(list(g.nodes))))
-    return sorted(degrees) == [1, 1] + [2] * (g.number_of_nodes() - 2)
 
 
 def get_path(g: nx.Graph, u, v):
@@ -69,33 +66,6 @@ def get_cycle(g: nx.Graph, node_in_cycle):
                 if cycle is not None:
                     return cycle
     return dfs(node_in_cycle, None, [node_in_cycle])
-
-    queue = [node_in_cycle]
-    p = {node_in_cycle: None}
-    while len(queue):
-        current = queue.pop()
-        for u in g.adj[current]:
-            if u not in p:
-                p[u] = current
-                queue.append(u)
-            else:
-                p[node_in_cycle] = current
-                break
-        if p[node_in_cycle] is not None:
-            break
-
-    res = [node_in_cycle]
-    current = node_in_cycle
-    while p[current] != node_in_cycle:
-        current = p[current]
-        res.append(current)
-    return res
-
-
-def all_chains(g, cycle: list):
-    if not isinstance(g, FactorGraph):
-        raise ValueError("Функция определена только для FactorGraph и его наследников")
-    pass
 
 
 class FactorGraph(nx.Graph):
@@ -156,17 +126,13 @@ class FactorGraph(nx.Graph):
             raise TypeError("Взятие тожественной конгруэнции возможно только для nx.Graph")
         return FactorGraph(g, FactorGraph.get_default_congruence(g))
 
-    def get_mains(self, allowed_nodes=None):
+    def get_mains(self):
         main_factors = set()
         main_factors_congs = set()
         for cls_1, cls_2 in itertools.combinations(self.cong, 2):
             if not independent_subsets(self.g, cls_1, cls_2):
                 continue
             if self.distance(cls_1, cls_2) % 2 == 1:
-                continue
-            if allowed_nodes is not None and \
-                    (cls_1 not in allowed_nodes or
-                     cls_2 not in allowed_nodes):
                 continue
             cong = deepcopy(self.cong)
             cong.remove(cls_1), cong.remove(cls_2)
@@ -183,7 +149,7 @@ class FactorGraph(nx.Graph):
     def get_labels(self):
         labels = {}
         for node in self.nodes:
-            labels[node] = str(node).replace("'", '').replace('(', '{').replace(')', '}')
+            labels[node] = format_congruence(node)
         return labels
 
 
@@ -193,24 +159,9 @@ class TreeFactorGraph(FactorGraph):
         self.generated_by = ()
 
     def get_mains(self, allowed_nodes=None):
-        queue = [self]
-        res = set()
-
-        while len(queue):
-            current, allowed_nodes = queue.pop(), None
-            if isinstance(current, tuple):
-                current, allowed_nodes = current
-            main_factors = FactorGraph.get_mains(current, allowed_nodes)
-            for main_factor in main_factors:
-                if main_factor in res:
-                    continue
-                elif is_tree(main_factor):
-                    res.add(TreeFactorGraph(main_factor.g, main_factor.cong))
-                else:
-                    gens = main_factor.generators[0] + main_factor.generators[1]
-                    path = get_cycle(main_factor, tuple(sorted(tuple(gens))))
-                    queue.append((main_factor, path))
-        return res
+        main_factors = FactorGraph.get_mains(self)
+        mains = {factor for factor in main_factors if is_tree(factor)}
+        return mains
 
     @staticmethod
     def get_default(g: nx.Graph):
@@ -286,8 +237,17 @@ class HalfLattice(nx.DiGraph):
     def get_labels(self):
         labels = {}
         for node in self.nodes:
-            labels[node] = self.nodes[node]['fg'].get_str_cong_beauty()
-            labels[node] = labels[node].replace("'", '').replace('(', '{').replace(')', '}')
+            gens = self.nodes[node]['fg'].generators
+            if gens is None:
+                labels[node] = '∆'
+            else:
+                gens = tuple(chain(*gens))
+                labels[node] = '∆' if gens is None else format_congruence(gens)
+                label = []
+                for cls in self.nodes[node]['fg'].cong:
+                    if len(cls) > 1:
+                        label.append(format_congruence(str(cls)))
+                labels[node] = ',\n'.join(label)
         return labels
 
 
