@@ -1,10 +1,14 @@
 from io import BytesIO
 
 import networkx as nx
+import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
 from alg import HalfLattice
+
+
+matplotlib.rcParams['image.composite_image'] = False
 
 
 def lattice_pos(g: HalfLattice, root, levels, width=1., height=1.):
@@ -27,9 +31,15 @@ def lattice_pos(g: HalfLattice, root, levels, width=1., height=1.):
 
 
 def draw_graph(g):
-    fig = plt.figure(figsize=(5, 5))
-    nx.draw_networkx(g)
-    # nx.draw(g)
+    fig = plt.figure(figsize=(3, 3))
+    ax = plt.subplot(111)
+    nx.draw_networkx(g,
+                     font_size=20,
+                     arrowsize=20,
+                     width=2.0,
+                     labels=g.get_labels(),
+                     edge_color='red')
+    ax.axis('off')
     obj = BytesIO()
     plt.savefig(obj)
     obj.seek(0)
@@ -54,34 +64,36 @@ def draw_lattice(g: HalfLattice, *, dpi=500, show=True, filename=None, ret_objec
     plt.clf()
 
 
-def draw_lattice_images(g: HalfLattice, *, show=True, filename=None):
+def draw_lattice_images(g: HalfLattice, *, filename='tree.png'):
     images = {}
     for node in g:
         factor = g.nodes[node]['fg']
         images[node] = draw_graph(factor)
 
     pos = lattice_pos(g, g.start.get_str_cong(), levels=g.levels)
-    fig = plt.figure(figsize=(50, 50))
+    fig = plt.figure(figsize=(20, 20))
     ax = plt.subplot(111)
 
-    nx.draw_networkx(g, pos=pos, with_labels=False, node_size=300, node_color='white')
-    # nx.draw_networkx_nodes(g, pos, nodelist=[])
+    nx.draw_networkx(g,
+                     pos=pos,
+                     node_size=3000,
+                     with_labels=False,
+                     node_color='white')
 
     trans = ax.transData.transform
     trans2 = fig.transFigure.inverted().transform
 
-    piesize = 1 / min(max(len(level) for level in g.levels), len(g.levels) + 1) / 4
+    piesize = 1 / min(max(len(level) for level in g.levels), len(g.levels) + 1) / 3
     p2 = piesize / 2.0
     for node in g:
         xx, yy = trans(pos[node])  # figure coordinates
         xa, ya = trans2((xx, yy))  # axes coordinates
         a = plt.axes([xa - p2, ya - p2, piesize, piesize])
         # a.set_aspect('equal')
-        a.imshow(mpimg.imread(images[node]))
+        im = a.imshow(mpimg.imread(images[node]))
+        # im.set_zorder(-1)
         a.axis('off')
-
-    # nx.draw_networkx_edges(g, pos=pos, with_labels=False, node_size=5000, node_color='white', ax=ax)
 
     ax.axis('off')
 
-    fig.savefig('tree.png', dpi=350)
+    fig.savefig(filename, dpi=350)

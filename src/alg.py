@@ -180,6 +180,12 @@ class FactorGraph(nx.Graph):
                 main_factors.add(factor)
         return main_factors
 
+    def get_labels(self):
+        labels = {}
+        for node in self.nodes:
+            labels[node] = str(node).replace("'", '').replace('(', '{').replace(')', '}')
+        return labels
+
 
 class TreeFactorGraph(FactorGraph):
     def __init__(self, g: nx.Graph, cong: list):
@@ -227,6 +233,8 @@ class HalfLattice(nx.DiGraph):
         self.levels = None
         self.nodes_levels = None
         self._set_levels()
+        for idx, level in enumerate(self.levels):
+            self.levels[idx] = sorted(level)
 
     def add_node(self, fg: FactorGraph,  **attr):
         node = fg.get_str_cong()
@@ -279,6 +287,7 @@ class HalfLattice(nx.DiGraph):
         labels = {}
         for node in self.nodes:
             labels[node] = self.nodes[node]['fg'].get_str_cong_beauty()
+            labels[node] = labels[node].replace("'", '').replace('(', '{').replace(')', '}')
         return labels
 
 

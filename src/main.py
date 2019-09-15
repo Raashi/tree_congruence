@@ -1,6 +1,5 @@
 #!/usr/bin/env/ python
 import networkx as nx
-import matplotlib.pyplot as plt
 
 from sys import argv, stdin
 
@@ -37,7 +36,6 @@ def read_graph(args) -> nx.Graph:
 
 def test_main_factors():
     g = read_graph(argv[1:3])
-    # draw_graph_circular(g)
 
     factor_default = alg.FactorGraph.get_default(g)
     factors = list(factor_default.get_mains())
@@ -62,21 +60,20 @@ def test_half_lattice():
     hl = alg.HalfLattice(g)
     for level, nodes_with_level in enumerate(hl.levels):
         print(level, ':', [node for node in nodes_with_level])
-    draw.draw_lattice(hl)
+    if '-i' in argv:
+        draw.draw_lattice(hl)
 
 
 def test_lattice():
     g = read_graph(argv[1:3])
     lattice = alg.Lattice(g)
-    # for level, nodes_with_level in enumerate(lattice.levels):
-    #     print(level, ':', [node for node in nodes_with_level])
-    # draw.draw_lattice(lattice, show=False, filename='out.png')
-    draw.draw_lattice_images(lattice)
+    if '-i' in argv:
+        draw.draw_lattice_images(lattice, filename='tree.png')
+    if '-c' in argv:
+        draw.draw_lattice(lattice, filename='tree_cong.png', show=False)
 
 
 def main():
-    # test_half_lattice()
-    # test_tree()
     test_lattice()
 
 
