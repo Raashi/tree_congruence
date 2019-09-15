@@ -1,25 +1,22 @@
 from io import BytesIO
 
 import networkx as nx
-import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
 from alg import HalfLattice
 
 
-matplotlib.rcParams['image.composite_image'] = False
-
-
-def lattice_pos(g: HalfLattice, root, levels, width=1., height=1.):
+def lattice_pos(g: HalfLattice, root, levels):
     currents = [0] * len(levels)
-    vert_gap = height / (max([len(nodes) for nodes in levels]) + 1)
+    dy = 1 / len(levels)
+    top = dy / 2
 
     def _make_pos(pos, node):
         level = g.nodes_levels[node]
         dx = 1 / len(levels[level])
         left = dx / 2
-        pos[node] = ((left + dx * currents[level]) * width, -vert_gap * level * height)
+        pos[node] = (left + dx * currents[level], -1 + top + dy * level)
         currents[level] += 1
         for outer_node in g.successors(node):
             if outer_node not in pos:
@@ -33,12 +30,10 @@ def lattice_pos(g: HalfLattice, root, levels, width=1., height=1.):
 def draw_graph(g):
     fig = plt.figure(figsize=(3, 3))
     ax = plt.subplot(111)
-    nx.draw_networkx(g,
-                     font_size=20,
-                     arrowsize=20,
-                     width=2.0,
-                     labels=g.get_labels(),
-                     edge_color='red')
+    nx.draw_networkx(g, font_size=16, arrowsize=20, width=2.0, node_color='w',
+                     labels=g.get_labels(), edge_color='red')
+    plt.tight_layout()
+    # noinspection PyUnresolvedReferences
     ax.axis('off')
     obj = BytesIO()
     plt.savefig(obj)
@@ -74,26 +69,19 @@ def draw_lattice_images(g: HalfLattice, *, filename='tree.png'):
     fig = plt.figure(figsize=(20, 20))
     ax = plt.subplot(111)
 
-    nx.draw_networkx(g,
-                     pos=pos,
-                     node_size=3000,
-                     with_labels=False,
-                     node_color='white')
-
-    trans = ax.transData.transform
-    trans2 = fig.transFigure.inverted().transform
-
-    piesize = 1 / min(max(len(level) for level in g.levels), len(g.levels) + 1) / 3
-    p2 = piesize / 2.0
+    img_size = 1 / min(max(len(level) for level in g.levels), len(g.levels) + 1) / 3
+    img_size_half = img_size / 2.0
     for node in g:
-        xx, yy = trans(pos[node])  # figure coordinates
-        xa, ya = trans2((xx, yy))  # axes coordinates
-        a = plt.axes([xa - p2, ya - p2, piesize, piesize])
-        # a.set_aspect('equal')
-        im = a.imshow(mpimg.imread(images[node]))
-        # im.set_zorder(-1)
-        a.axis('off')
+        xa, ya = pos[node]
+        # noinspection PyUnresolvedReferences
+        ax.imshow(mpimg.imread(images[node]), zorder=2, extent=[xa - img_size_half,
+                                                                xa + img_size_half,
+                                                                ya - img_size_half,
+                                                                ya + img_size_half])
 
+    nx.draw_networkx_edges(g, pos=pos, node_size=5000, ax=ax)
+
+    # noinspection PyUnresolvedReferences
+    ax.set_ylim(-1, 0)
     ax.axis('off')
-
     fig.savefig(filename, dpi=350)
