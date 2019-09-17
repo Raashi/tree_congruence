@@ -4,7 +4,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
-from alg import HalfLattice
+from lattice import HalfLattice
 
 
 def lattice_pos(g: HalfLattice, root, levels):
