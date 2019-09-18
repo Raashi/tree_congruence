@@ -7,6 +7,15 @@ import matplotlib.image as mpimg
 from lattice import HalfLattice
 
 
+_tree_id = 0
+
+
+def get_tree_id():
+    global _tree_id
+    _tree_id += 1
+    return _tree_id
+
+
 def lattice_pos(g: HalfLattice, root, levels):
     currents = [0] * len(levels)
     dy = 1 / len(levels)
@@ -28,15 +37,15 @@ def lattice_pos(g: HalfLattice, root, levels):
 
 
 def draw_graph(g):
-    fig = plt.figure(figsize=(3, 3))
-    ax = plt.subplot(111)
+    fig, ax = plt.subplots(figsize=(3, 3))
+    fig.subplots_adjust(0.3, 0, 0.7, 1)
     nx.draw_networkx(g, font_size=16, arrowsize=20, width=2.0, node_color='w',
-                     labels=g.get_labels(), edge_color='red')
-    plt.tight_layout()
-    # noinspection PyUnresolvedReferences
+                     labels=g.get_labels(), edge_color='red', ax=ax)
     ax.axis('off')
+    plt.tight_layout()
     obj = BytesIO()
-    plt.savefig(obj)
+    plt.savefig(obj, bbox_inches='tight')
+    plt.savefig(f'trees/test_{get_tree_id()}.png', bbox_inches='tight')
     obj.seek(0)
     plt.close(fig)
     return obj
@@ -79,9 +88,10 @@ def draw_lattice_images(g: HalfLattice, *, filename='tree.png'):
                                                                 ya - img_size_half,
                                                                 ya + img_size_half])
 
-    nx.draw_networkx_edges(g, pos=pos, node_size=5000, ax=ax)
+    nx.draw_networkx_edges(g, pos=pos, node_size=6000, ax=ax)
 
     # noinspection PyUnresolvedReferences
     ax.set_ylim(-1, 0)
+    # noinspection PyUnresolvedReferences
     ax.axis('off')
     fig.savefig(filename, dpi=350)
