@@ -1,4 +1,3 @@
-#!/usr/bin/env/ python
 import networkx as nx
 
 from sys import argv, stdin
@@ -33,6 +32,8 @@ def read_graph(args) -> nx.Graph:
     elif source == "-f":
         with open(args[1]) as src_file:
             g = init_graph(src_file)
+    if g.number_of_nodes() == 0:
+        g.add_node('1')
     return g
 
 
