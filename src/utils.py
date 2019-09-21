@@ -3,13 +3,6 @@ from itertools import product
 from networkx import Graph
 
 
-def format_congruence(cong_str):
-    res = str(cong_str).replace("'", '').replace('(', '{').replace(')', '}')
-    if res[-2] == ',':
-        res = res[:-2] + '}'
-    return res
-
-
 def independent_subsets(g: Graph, subset_1, subset_2) -> bool:
     for u, v in product(subset_1, subset_2):
         if g.has_edge(u, v):
@@ -30,3 +23,23 @@ def is_tree(g: Graph) -> bool:
                 visited.add(v)
                 queue.add(v)
     return len(visited) == g.number_of_nodes()
+
+
+def get_independence_table(g: Graph):
+    return [[not g.has_edge(u, v)] for u in g for v in g]
+
+
+def distance(self, u, v):
+    queue = [u]
+    d = {u: 0}
+    while len(queue):
+        current = queue.pop()
+        for node in self.adj[current]:
+            if node == v:
+                return d[current] + 1
+            elif node in d:
+                continue
+            else:
+                queue.append(node)
+                d[node] = d[current] + 1
+    raise ValueError("Невозможно определить расстояние между вершинами")

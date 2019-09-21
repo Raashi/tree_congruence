@@ -52,9 +52,9 @@ def draw_graph(g):
 
 
 def draw_lattice(g: HalfLattice, *, dpi=500, show=True, filename=None, ret_object=False):
-    pos = lattice_pos(g, g.start.get_str_cong(), levels=g.levels)
+    pos = lattice_pos(g, g.start.as_node(), levels=g.levels)
     plt.figure(figsize=(20, 20))
-    nx.draw_networkx(g, pos=pos, labels=g.get_labels(), node_size=3000, node_color='white', dpi=dpi)
+    nx.draw_networkx(g, pos=pos, node_size=3000, node_color='white', dpi=dpi)
     if filename is not None:
         plt.savefig(filename)
     if show:

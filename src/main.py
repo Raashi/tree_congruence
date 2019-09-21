@@ -3,7 +3,7 @@ import networkx as nx
 from sys import argv, stdin
 
 from factor import FactorGraph
-from lattice import HalfLattice, Lattice
+from lattice import HalfLattice
 from utils import is_tree
 import draw
 
@@ -40,8 +40,8 @@ def read_graph(args) -> nx.Graph:
 def test_main_factors():
     g = read_graph(argv[1:3])
 
-    factor_default = FactorGraph.get_default(g)
-    factors = list(factor_default.get_mains())
+    factor_default = FactorGraph(g)
+    factors = list(factor_default.get_mains(False))
     if not len(factors):
         print('Граф имеет только тождественную конгруэнцию')
         return
@@ -60,7 +60,7 @@ def test_tree():
 
 def test_half_lattice():
     g = read_graph(argv[1:3])
-    hl = HalfLattice(g)
+    hl = HalfLattice(g, False)
     for level, nodes_with_level in enumerate(hl.levels):
         print(level, ':', [node for node in nodes_with_level])
     if '-i' in argv:
@@ -69,7 +69,7 @@ def test_half_lattice():
 
 def test_lattice():
     g = read_graph(argv[1:3])
-    lattice = Lattice(g)
+    lattice = HalfLattice(g, True)
     if '-i' in argv:
         draw.draw_lattice_images(lattice, filename='tree.png')
     if '-c' in argv:

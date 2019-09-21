@@ -1,16 +1,15 @@
-import networkx as nx
+from networkx import Graph, DiGraph
 
-from itertools import chain
-
-from factor import FactorGraph, TreeFactorGraph
-from utils import format_congruence
+from factor import FactorGraph
 
 
-class HalfLattice(nx.DiGraph):
-    def __init__(self, g: nx.Graph, cong_cls=FactorGraph):
+class HalfLattice(DiGraph):
+    def __init__(self, g: Graph, trees: bool):
         super(HalfLattice, self).__init__()
+        self.trees = trees
+
         self.final = []
-        self.start = cong_cls.get_default(g)
+        self.start = FactorGraph(g)
         self.add_node(self.start)
         self._build()
         self._find_finals()
@@ -23,24 +22,24 @@ class HalfLattice(nx.DiGraph):
             self.levels[idx] = sorted(level)
 
     def add_node(self, fg: FactorGraph,  **attr):
-        node = fg.get_str_cong()
+        node = fg.as_node()
         super(HalfLattice, self).add_node(node, **attr)
         self.nodes[node]['fg'] = fg
 
     def _build(self):
-        queue = [self.start.get_str_cong()]
+        queue = [self.start.as_node()]
         while len(queue):
             current = queue.pop()
-            main_factors = self.nodes[current]['fg'].get_mains()
+            main_factors = self.nodes[current]['fg'].get_mains(self.trees)
             for main_factor in main_factors:
-                node = main_factor.get_str_cong()
+                node = main_factor.as_node()
                 if node not in self.nodes:
                     self.add_node(main_factor)
                 self.add_edge(current, node)
                 queue.append(node)
 
     def _find_finals(self):
-        queue = [self.start.get_str_cong()]
+        queue = [self.start.as_node()]
         while len(queue):
             current = queue.pop()
             current_fg = self.nodes[current]['fg']
@@ -54,7 +53,7 @@ class HalfLattice(nx.DiGraph):
 
     def _set_levels(self):
         def gen_distances_to_root(source, cur, length):
-            if cur == self.start.get_str_cong():
+            if cur == self.start.as_node():
                 yield length
             for u in self.predecessors(cur):
                 yield from gen_distances_to_root(source, u, length + 1)
@@ -68,24 +67,3 @@ class HalfLattice(nx.DiGraph):
             self.levels += [[] for _ in range(level + 1 - len(self.levels))]
             self.levels[level].append(node)
             self.nodes_levels[node] = level
-
-    def get_labels(self):
-        labels = {}
-        for node in self.nodes:
-            gens = self.nodes[node]['fg'].generators
-            if gens is None:
-                labels[node] = '∆'
-            else:
-                gens = tuple(chain(*gens))
-                labels[node] = '∆' if gens is None else format_congruence(gens)
-                label = []
-                for cls in self.nodes[node]['fg'].cong:
-                    if len(cls) > 1:
-                        label.append(format_congruence(str(cls)))
-                labels[node] = '\n'.join(label)
-        return labels
-
-
-class Lattice(HalfLattice):
-    def __init__(self, g: nx.Graph):
-        super(Lattice, self).__init__(g, TreeFactorGraph)
