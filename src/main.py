@@ -6,6 +6,7 @@ from factor import FactorGraph
 from lattice import HalfLattice
 from utils import is_tree
 import draw
+import partitions
 
 
 def init_graph(io_obj):
@@ -76,8 +77,16 @@ def test_lattice():
         draw.draw_lattice(lattice, filename='tree_cong.png', show=False)
 
 
+def test_partitions():
+    g = read_graph(argv[1:3])
+    division = partitions.divide(g)
+    for part in partitions.partition(list(g.nodes), division):
+        partitions.FactorGraph(g, part)
+
+
 def main():
-    test_lattice()
+    # test_lattice()
+    test_partitions()
 
 
 if __name__ == '__main__':
