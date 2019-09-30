@@ -1,6 +1,7 @@
 import networkx as nx
 
 from sys import argv, stdin
+from itertools import combinations
 
 from factor import FactorGraph
 from lattice import HalfLattice
@@ -80,12 +81,43 @@ def test_lattice():
 def test_partitions():
     g = read_graph(argv[1:3])
     division = partitions.divide(g)
+    factors = []
+    levels = {}
+    nodes_levels = {}
     for part in partitions.partition(list(g.nodes), division):
-        partitions.FactorGraph(g, part)
+        factor = partitions.FactorGraph(g, part)
+        if is_tree(factor):
+            factors.append(partitions.FactorGraph(g, part))
+            if factor.level not in levels:
+                levels[factor.level] = []
+            levels[factor.level].append(factor)
+            nodes_levels[factor.as_node()] = factor.level
+    levels = [levels[level] for level in sorted(levels)]
+    print('factors finished')
+
+    lattice = nx.DiGraph()
+    lattice.start = levels[0][0]
+    lattice.levels = [[fac.as_node() for fac in facs] for facs in levels]
+    lattice.nodes_levels = nodes_levels
+    for facs in levels:
+        for fac in facs:
+            lattice.add_node(fac.as_node())
+    for level in range(len(levels) - 1):
+        upper = level + 1
+        for fac_low in levels[level]:
+            for fac_upper in levels[upper]:
+                count = 0
+                for cls in fac_low.cong:
+                    if cls in fac_low.cong:
+                        count += 1
+                if count == len(fac_low.cong) - 2:
+                    lattice.add_edge(fac_low.as_node(), fac_upper.as_node())
+        print(f'level {level} finished')
+    # draw.draw_lattice(lattice, filename='tree_cong.png', show=False)
 
 
 def main():
-    # test_lattice()
+    #  test_lattice()
     test_partitions()
 
 

@@ -38,13 +38,33 @@ def partition(collection, division):
 
 class FactorGraph(Graph):
     def __init__(self, g: Graph, cong: list):
-        super(FactorGraph, self).__init__(g)
+        super(FactorGraph, self).__init__()
 
         self.cong = [CongruenceClass(cls) for cls in cong]
+        self.level = 0
         for cls in self.cong:
             self.add_node(cls.as_node())
+            if len(cls) > 1:
+                self.level += len(cls) - 1
         for (cls1, cls2) in combinations(self.cong, 2):
             for node1, node2 in product(cls1, cls2):
                 if g.has_edge(node1, node2):
                     self.add_edge(cls1.as_node(), cls2.as_node())
                     break
+
+    def __str__(self):
+        res = ', '.join(cls.as_node() for cls in self.cong if len(cls) > 1)
+        if len(res) == 0:
+            return '∆'
+        return res
+
+    def __eq__(self, other):
+        if not isinstance(other, FactorGraph):
+            raise ValueError
+        return str(self) == str(other)
+
+    def __hash__(self):
+        return str(self).__hash__()
+
+    def as_node(self):
+        return str(self)
