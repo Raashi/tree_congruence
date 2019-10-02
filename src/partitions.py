@@ -41,6 +41,9 @@ class FactorGraph(Graph):
         super(FactorGraph, self).__init__()
 
         self.cong = [CongruenceClass(cls) for cls in cong]
+        self.cong_set = set(el for el in self.cong)
+        self.as_node = self.stringify()
+        self.hash = self.as_node.__hash__()
         self.level = 0
         for cls in self.cong:
             self.add_node(cls.as_node())
@@ -52,19 +55,17 @@ class FactorGraph(Graph):
                     self.add_edge(cls1.as_node(), cls2.as_node())
                     break
 
-    def __str__(self):
+    def stringify(self):
         res = ', '.join(cls.as_node() for cls in self.cong if len(cls) > 1)
         if len(res) == 0:
             return '∆'
         return res
 
+    def __str__(self):
+        return self.as_node
+
     def __eq__(self, other):
-        if not isinstance(other, FactorGraph):
-            raise ValueError
-        return str(self) == str(other)
+        return self.as_node == other.as_node
 
     def __hash__(self):
-        return str(self).__hash__()
-
-    def as_node(self):
-        return str(self)
+        return self.hash

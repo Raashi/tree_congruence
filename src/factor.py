@@ -20,9 +20,11 @@ class CongruenceClass:
 
     def __init__(self, nodes):
         self._nodes = sorted(nodes)
+        self.string = '{' + ', '.join(self._nodes) + '}'
+        self.hash = self.string.__hash__()
 
     def __str__(self):
-        return '{' + ', '.join(self._nodes) + '}'
+        return self.string
 
     def __add__(self, other):
         if not isinstance(other, CongruenceClass):
@@ -43,6 +45,9 @@ class CongruenceClass:
 
     def __lt__(self, other):
         return str(self) < str(other)
+
+    def __hash__(self):
+        return self.hash
 
     def as_node(self):
         return str(self)

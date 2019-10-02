@@ -10,6 +10,29 @@ from lattice import HalfLattice
 _tree_id = 0
 
 
+fig_sizes = {
+    3: (20, 20),
+    4: (20, 20),
+    5: (20, 20),
+    6: (50, 50),
+    7: (100, 100),
+    8: (200, 200)
+}
+
+
+def split_label(label: str):
+    if '{' not in label:
+        return label
+    res = []
+    while '{' in label:
+        lpos = label.find('{')
+        rpos = label.find('}')
+        res.append(label[lpos:rpos + 1])
+        label = label[rpos + 2:]
+    res = '\n'.join(res)
+    return res
+
+
 def get_tree_id():
     global _tree_id
     _tree_id += 1
@@ -52,9 +75,10 @@ def draw_graph(g):
 
 
 def draw_lattice(g: HalfLattice, *, dpi=500, show=True, filename=None, ret_object=False):
-    pos = lattice_pos(g, g.start.as_node(), levels=g.levels)
-    plt.figure(figsize=(20, 20))
-    nx.draw_networkx(g, pos=pos, node_size=3000, node_color='white', dpi=dpi)
+    pos = lattice_pos(g, g.start.as_node, levels=g.levels)
+    plt.figure(figsize=fig_sizes[len(g.levels)])
+    nx.draw_networkx(g, pos=pos, node_size=3000, node_color='white', dpi=dpi,
+                     labels={node: split_label(node) for node in g.nodes})
     if filename is not None:
         plt.savefig(filename)
     if show:
