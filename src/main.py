@@ -40,6 +40,7 @@ def main():
     g = read_graph(argv[1:3])
     levels_to_build = int(argv[2 if '-r' in argv else 3])
     lattice = Lattice(g, levels_to_build)
+    lattice.save('lattice.txt')
     if '-i' in argv:
         draw_lattice_images(lattice, filename='tree.png')
     if '-c' in argv:

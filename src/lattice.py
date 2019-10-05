@@ -55,3 +55,9 @@ class Lattice(DiGraph):
                         self.add_edge(node, string)
             print(f'Уровень {level} построен')
         print('Построение заняло {:.2f} секунд'.format(time() - start))
+
+    def save(self, filename):
+        with open(filename, 'w') as f:
+            f.write(f'{self.number_of_edges()}\n')
+            for u, v in self.edges:
+                f.write(f'{u} -> {v}\n')
