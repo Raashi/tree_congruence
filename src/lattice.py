@@ -8,11 +8,13 @@ from utils import is_tree, divide
 
 
 class Lattice(DiGraph):
-    def __init__(self, g: Graph):
+    def __init__(self, g: Graph, levels_to_build):
         super().__init__()
 
         self.g = g
         self.division = divide(g)
+
+        self.levels_to_build = levels_to_build
 
         self.final = []
         self.start = FactorGraph(g, sorted([CongruenceClass([node]) for node in g.nodes]), '∆')
@@ -36,7 +38,7 @@ class Lattice(DiGraph):
         self.levels_set[0].add(self.start.string)
         self.nodes_levels[self.start.string] = 0
 
-        for level in range(self.levels_count - 1):
+        for level in range(min(self.levels_count - 1, self.levels_to_build - 1)):
             for node in self.levels[level]:
                 factor = self.nodes[node]['fg']
                 for cong, string in factor.get_mains(self.division):
