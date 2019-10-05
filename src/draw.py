@@ -7,9 +7,6 @@ import matplotlib.image as mpimg
 from lattice import Lattice
 
 
-_tree_id = 0
-
-
 fig_sizes = {
     3: (20, 20),
     4: (20, 20),
@@ -31,12 +28,6 @@ def split_label(label: str):
         label = label[rpos + 2:]
     res = '\n'.join(res)
     return res
-
-
-def get_tree_id():
-    global _tree_id
-    _tree_id += 1
-    return _tree_id
 
 
 def lattice_pos(g: Lattice, root, levels):
@@ -63,12 +54,11 @@ def draw_graph(g):
     fig, ax = plt.subplots(figsize=(3, 3))
     fig.subplots_adjust(0.3, 0, 0.7, 1)
     nx.draw_networkx(g, font_size=16, arrowsize=20, width=2.0, node_color='w',
-                     labels=g.get_labels(), edge_color='red', ax=ax)
+                     labels={node: split_label(node) for node in g.nodes}, edge_color='red', ax=ax)
     ax.axis('off')
     plt.tight_layout()
     obj = BytesIO()
     plt.savefig(obj, bbox_inches='tight')
-    plt.savefig(f'trees/test_{get_tree_id()}.png', bbox_inches='tight')
     obj.seek(0)
     plt.close(fig)
     return obj
@@ -98,7 +88,7 @@ def draw_lattice_images(g: Lattice, *, filename='tree.png'):
         factor = g.nodes[node]['fg']
         images[node] = draw_graph(factor)
 
-    pos = lattice_pos(g, g.start.get_str_cong(), levels=g.levels)
+    pos = lattice_pos(g, g.start.string, levels=g.levels)
     fig = plt.figure(figsize=(20, 20))
     ax = plt.subplot(111)
 

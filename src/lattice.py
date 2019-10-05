@@ -47,9 +47,9 @@ class Lattice(DiGraph):
                         if not is_tree(sub_factor):
                             continue
                         self.add_node(sub_factor)
-                        self.levels[level + 1].append(sub_factor.string)
-                        self.levels_set[level + 1].add(sub_factor.string)
-                        self.nodes_levels[sub_factor.string] = level + 1
-                        self.add_edge(node, sub_factor.string)
+                        self.levels[level + 1].append(string)
+                        self.levels_set[level + 1].add(string)
+                        self.nodes_levels[string] = level + 1
+                        self.add_edge(node, string)
             print(f'Уровень {level} построен')
         print('Построение заняло {:.2f} секунд'.format(time() - start))
