@@ -1,13 +1,6 @@
-from itertools import product
+from copy import deepcopy
 
 from networkx import Graph
-
-
-def independent_subsets(g: Graph, subset_1, subset_2) -> bool:
-    for u, v in product(subset_1, subset_2):
-        if g.has_edge(u, v):
-            return False
-    return True
 
 
 def is_tree(g: Graph) -> bool:
@@ -25,21 +18,31 @@ def is_tree(g: Graph) -> bool:
     return len(visited) == g.number_of_nodes()
 
 
-def get_independence_table(g: Graph):
-    return [[not g.has_edge(u, v)] for u in g for v in g]
+def build_cong(old_cong, cls_1, cls_2):
+    cong = deepcopy(old_cong)
+
+    new_class = cls_1 + cls_2
+    cong.remove(cls_1)
+    cong.remove(cls_2)
+    cong.append(new_class)
+    cong = sorted(cong)
+    string = ', '.join(cls.string for cls in cong if len(cls) > 1)
+    if len(string) == 0:
+        return '∆'
+    return cong, string
 
 
-def distance(self, u, v):
-    queue = [u]
-    d = {u: 0}
+def divide(g: Graph):
+    if g.number_of_nodes() == 0:
+        return {}
+    node = next(iter(g.nodes))
+    queue = [node]
+    division = {node: True}
     while len(queue):
-        current = queue.pop()
-        for node in self.adj[current]:
-            if node == v:
-                return d[current] + 1
-            elif node in d:
-                continue
-            else:
-                queue.append(node)
-                d[node] = d[current] + 1
-    raise ValueError("Невозможно определить расстояние между вершинами")
+        u = queue.pop()
+        for v in g.neighbors(u):
+            if v not in division:
+                division[v] = not division[u]
+                queue.append(v)
+    assert len(division) == g.number_of_nodes()
+    return division

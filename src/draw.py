@@ -4,7 +4,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
-from lattice import HalfLattice
+from lattice import Lattice
 
 
 _tree_id = 0
@@ -39,7 +39,7 @@ def get_tree_id():
     return _tree_id
 
 
-def lattice_pos(g: HalfLattice, root, levels):
+def lattice_pos(g: Lattice, root, levels):
     currents = [0] * len(levels)
     dy = 1 / len(levels)
     top = dy / 2
@@ -74,8 +74,8 @@ def draw_graph(g):
     return obj
 
 
-def draw_lattice(g: HalfLattice, *, dpi=500, show=True, filename=None, ret_object=False):
-    pos = lattice_pos(g, g.start.as_node, levels=g.levels)
+def draw_lattice(g: Lattice, *, dpi=500, show=True, filename=None, ret_object=False):
+    pos = lattice_pos(g, g.start.string, levels=g.levels)
     plt.figure(figsize=fig_sizes[len(g.levels)])
     nx.draw_networkx(g, pos=pos, node_size=3000, node_color='white', dpi=dpi,
                      labels={node: split_label(node) for node in g.nodes})
@@ -92,7 +92,7 @@ def draw_lattice(g: HalfLattice, *, dpi=500, show=True, filename=None, ret_objec
     plt.clf()
 
 
-def draw_lattice_images(g: HalfLattice, *, filename='tree.png'):
+def draw_lattice_images(g: Lattice, *, filename='tree.png'):
     images = {}
     for node in g:
         factor = g.nodes[node]['fg']

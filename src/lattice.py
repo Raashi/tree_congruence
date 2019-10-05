@@ -1,69 +1,55 @@
+from time import time
+
 from networkx import Graph, DiGraph
 
+from congclass import CongruenceClass
 from factor import FactorGraph
+from utils import is_tree, divide
 
 
-class HalfLattice(DiGraph):
-    def __init__(self, g: Graph, trees: bool):
-        super(HalfLattice, self).__init__()
-        self.trees = trees
+class Lattice(DiGraph):
+    def __init__(self, g: Graph):
+        super().__init__()
+
+        self.g = g
+        self.division = divide(g)
 
         self.final = []
-        self.start = FactorGraph(g)
+        self.start = FactorGraph(g, sorted([CongruenceClass([node]) for node in g.nodes]), '∆')
         self.add_node(self.start)
+
+        self.levels_count = g.number_of_nodes() - 1
+        self.levels = [[] for _ in range(self.levels_count)]
+        self.levels_set = [set() for _ in range(self.levels_count)]
+        self.nodes_levels = {}
         self._build()
-        self._find_finals()
 
-        self.levels = None
-        self.nodes_levels = None
-        self._set_levels()
-        # noinspection PyTypeChecker
-        for idx, level in enumerate(self.levels):
-            self.levels[idx] = sorted(level)
-
-    def add_node(self, fg: FactorGraph,  **attr):
-        node = fg.as_node()
-        super(HalfLattice, self).add_node(node, **attr)
+    def add_node(self, fg: FactorGraph, **attr):
+        node = fg.string
+        super(Lattice, self).add_node(node, **attr)
         self.nodes[node]['fg'] = fg
 
     def _build(self):
-        queue = [self.start.as_node()]
-        while len(queue):
-            current = queue.pop()
-            main_factors = self.nodes[current]['fg'].get_mains(self.trees)
-            for main_factor in main_factors:
-                node = main_factor.as_node()
-                if node not in self.nodes:
-                    self.add_node(main_factor)
-                self.add_edge(current, node)
-                queue.append(node)
+        print('Старт построения решетки')
+        start = time()
+        self.levels[0].append(self.start.string)
+        self.levels_set[0].add(self.start.string)
+        self.nodes_levels[self.start.string] = 0
 
-    def _find_finals(self):
-        queue = [self.start.as_node()]
-        while len(queue):
-            current = queue.pop()
-            current_fg = self.nodes[current]['fg']
-            outers = list(self.successors(current))
-            if not len(outers):
-                if current_fg not in self.final:
-                    self.final.append(current_fg)
-            else:
-                for u in outers:
-                    queue.append(u)
-
-    def _set_levels(self):
-        def gen_distances_to_root(source, cur, length):
-            if cur == self.start.as_node():
-                yield length
-            for u in self.predecessors(cur):
-                yield from gen_distances_to_root(source, u, length + 1)
-
-        self.levels = []
-        self.nodes_levels = {}
-        for node in self.nodes:
-            distances = [level for level in gen_distances_to_root(node, node, 0)]
-            level = max(distances)
-
-            self.levels += [[] for _ in range(level + 1 - len(self.levels))]
-            self.levels[level].append(node)
-            self.nodes_levels[node] = level
+        for level in range(self.levels_count - 1):
+            for node in self.levels[level]:
+                factor = self.nodes[node]['fg']
+                for cong, string in factor.get_mains(self.division):
+                    if string in self.levels_set[level + 1]:
+                        self.add_edge(node, string)
+                    else:
+                        sub_factor = FactorGraph(self.g, cong, string)
+                        if not is_tree(sub_factor):
+                            continue
+                        self.add_node(sub_factor)
+                        self.levels[level + 1].append(sub_factor.string)
+                        self.levels_set[level + 1].add(sub_factor.string)
+                        self.nodes_levels[sub_factor.string] = level + 1
+                        self.add_edge(node, sub_factor.string)
+            print(f'Уровень {level} построен')
+        print('Построение заняло {:.2f} секунд'.format(time() - start))
