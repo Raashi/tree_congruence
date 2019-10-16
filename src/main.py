@@ -38,9 +38,10 @@ def read_graph(args) -> Graph:
 # 1, 1, 2, 5, 15, 52, 203, 877, 4140, 21 147, 115 975,
 def main():
     g = read_graph(argv[1:3])
-    levels_to_build = int(argv[2 if '-r' in argv else 3])
+    levels_to_build = int(argv[argv.index('-l') + 1])
     lattice = Lattice(g, levels_to_build)
     lattice.save('lattice.txt')
+    print('Количество вершин -', lattice.number_of_nodes())
     if '-i' in argv:
         draw_lattice_images(lattice, filename='tree.png')
     if '-c' in argv:
