@@ -8,12 +8,16 @@ from lattice import Lattice
 
 
 fig_sizes = {
-    3: (20, 20),
+    1: (5, 5),
+    2: (10, 10),
+    3: (15, 15),
     4: (20, 20),
     5: (20, 20),
     6: (50, 50),
     7: (100, 100),
-    8: (200, 200)
+    8: (200, 200),
+    9: (100, 100),
+    10: (100, 100)
 }
 
 
@@ -66,7 +70,7 @@ def draw_graph(g):
 
 def draw_lattice(g: Lattice, *, dpi=500, show=True, filename=None, ret_object=False):
     pos = lattice_pos(g, g.start.string, levels=g.levels)
-    plt.figure(figsize=fig_sizes[len(g.levels)])
+    plt.figure(figsize=fig_sizes.get(g.levels_count_actual, (100, 100)))
     nx.draw_networkx(g, pos=pos, node_size=3000, node_color='white', dpi=dpi,
                      labels={node: split_label(node) for node in g.nodes})
     if filename is not None:

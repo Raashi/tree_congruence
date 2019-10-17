@@ -41,7 +41,7 @@ def main():
     levels_to_build = int(argv[argv.index('-l') + 1])
     lattice = Lattice(g, levels_to_build)
     lattice.save('lattice.txt')
-    print('Количество вершин -', lattice.number_of_nodes())
+    print('Количество элементов решетки =', lattice.number_of_nodes())
     if '-i' in argv:
         draw_lattice_images(lattice, filename='tree.png')
     if '-c' in argv:

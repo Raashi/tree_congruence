@@ -21,6 +21,7 @@ class Lattice(DiGraph):
         self.add_node(self.start)
 
         self.levels_count = g.number_of_nodes() - 1
+        self.levels_count_actual = min(self.levels_to_build, self.levels_count)
         self.levels = [[] for _ in range(self.levels_count)]
         self.levels_set = [set() for _ in range(self.levels_count)]
         self.nodes_levels = {}
@@ -53,7 +54,7 @@ class Lattice(DiGraph):
                         self.levels_set[level + 1].add(string)
                         self.nodes_levels[string] = level + 1
                         self.add_edge(node, string)
-            print(f'Уровень {level} построен')
+            print(f'Уровень {level + 1} построен')
         print('Построение заняло {:.2f} секунд'.format(time() - start))
 
     def save(self, filename):
