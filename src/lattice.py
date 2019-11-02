@@ -21,7 +21,8 @@ class Lattice(DiGraph):
         self.add_node(self.start)
 
         self.levels_count = g.number_of_nodes() - 1
-        self.levels_count_actual = min(self.levels_to_build, self.levels_count)
+        if self.levels_to_build is not None:
+            self.levels_count = min(self.levels_to_build, self.levels_count)
         self.levels = [[] for _ in range(self.levels_count)]
         self.levels_set = [set() for _ in range(self.levels_count)]
         self.nodes_levels = {}
@@ -39,7 +40,7 @@ class Lattice(DiGraph):
         self.levels_set[0].add(self.start.string)
         self.nodes_levels[self.start.string] = 0
 
-        for level in range(min(self.levels_count - 1, self.levels_to_build - 1)):
+        for level in range(0, self.levels_count - 1):
             for node in self.levels[level]:
                 factor = self.nodes[node]['fg']
                 for cong, string in factor.get_mains(self.division):
@@ -61,4 +62,4 @@ class Lattice(DiGraph):
         with open(filename, 'w', encoding="utf-8") as f:
             f.write(f'{self.number_of_edges()}\n')
             for u, v in self.edges:
-                f.write(f'{u} -> {v}\n')
+                f.write(f'{u} → {v}\n')
