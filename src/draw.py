@@ -1,5 +1,5 @@
 from networkx import draw_networkx, Graph
-from matplotlib.pyplot import figure, savefig, clf, gca, ylim
+from matplotlib.pyplot import figure, savefig, clf, gca, ylim, xlim
 
 from lattice import Lattice
 
@@ -11,8 +11,8 @@ fig_sizes = {
     4: (7, 7),
     5: (12, 10),
     6: (18, 18),
-    7: (40, 22),
-    8: (60, 40)
+    7: (50, 25),
+    8: (100, 50)
 }
 
 
@@ -33,10 +33,14 @@ def lattice_pos(g: Lattice, root, levels):
     currents = [0] * len(levels)
     dy = 1 / (len(levels) - 1) if len(levels) > 1 else 0.5
 
+    min_left = 1
+
     def _make_pos(pos, node):
         level = g.nodes_levels[node]
         dx = 1 / len(levels[level])
         left = dx / 2
+        nonlocal min_left
+        min_left = min(min_left, left)
         pos[node] = (left + dx * currents[level], -1 + dy * level)
         currents[level] += 1
         for outer_node in g.successors(node):
@@ -45,17 +49,18 @@ def lattice_pos(g: Lattice, root, levels):
 
     res = {}
     _make_pos(res, root)
-    return res
+    return res, min_left
 
 
 def draw_lattice(g: Lattice, filename: str):
     clf()
-    pos = lattice_pos(g, g.start.string, levels=g.levels)
+    pos, min_left = lattice_pos(g, g.start.string, levels=g.levels)
     fig_size = fig_sizes.get(g.g.number_of_nodes(), (100, 100))
     figure(figsize=fig_size)
     labels = {node: split_label(node) for node in g.nodes}
-    draw_networkx(g, pos=pos, node_size=4000, node_color='white', dpi=800, labels=labels, font_size=18)
+    draw_networkx(g, pos=pos, node_size=4000, node_color='white', dpi=800, labels=labels, font_size=18, arrows=False)
     ylim(-1 - 1 / fig_size[1] / 2, 1 / fig_size[1] / 2)
+    xlim(min_left - 1 / fig_size[0], 1 - min_left + 1 / fig_size[0])
     gca().axis('off')
     savefig(filename, bbox_inches='tight')
     clf()
